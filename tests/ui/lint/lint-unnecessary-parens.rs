@@ -1,5 +1,6 @@
 //@ run-rustfix
 
+#![feature(impl_trait_in_fn_trait_return)]
 #![deny(unused_parens)]
 #![allow(while_true)] // for rustfix
 
@@ -31,8 +32,50 @@ pub trait Trait {
     fn test(&self);
 }
 
-pub fn passes_unused_parens_lint() -> &'static (dyn Trait) {
+pub fn unused_parens_around_multi_bound_ref_passes() -> &'static (dyn Trait + Send) {
     panic!()
+}
+
+pub fn unused_parens_around_single_bound_ref() -> &'static (dyn Trait) { //~ ERROR unnecessary parentheses around type
+    panic!()
+}
+
+pub fn unused_parens_around_multi_bound_ptr_passes() -> *const (dyn Trait + Send) {
+    panic!()
+}
+
+pub fn unused_parens_around_single_bound_ptr() -> *const (dyn Trait) { //~ ERROR unnecessary parentheses around type
+    panic!()
+}
+
+pub fn unused_parens_around_multi_bound_dyn_fn_output_passes()
+-> &'static dyn FnOnce() -> (impl Send + Sync) {
+    &|| ()
+}
+
+pub fn unused_parens_around_single_bound_dyn_fn_output() -> &'static dyn FnOnce()
+-> (impl Send) { //~ ERROR unnecessary parentheses around type
+    &|| ()
+}
+
+pub fn unused_parens_around_dyn_fn_output_passes_given_additinoal_output_bounds()
+-> &'static (dyn FnOnce() -> (impl Send) + Sync) {
+    &|| ()
+}
+
+pub fn unused_parens_around_multi_bound_impl_fn_output_passes()
+-> impl FnOnce() -> (impl Send + Sync) {
+    || ()
+}
+
+pub fn unused_parens_around_single_bound_impl_fn_output()
+-> impl FnOnce() -> (impl Send) { //~ ERROR unnecessary parentheses around type
+    || ()
+}
+
+pub fn unused_parens_around_impl_fn_output_passes_given_additinoal_output_bounds()
+-> impl FnOnce() -> (impl Send) + Sync {
+    || ()
 }
 
 pub fn parens_with_keyword(e: &[()]) -> i32 {

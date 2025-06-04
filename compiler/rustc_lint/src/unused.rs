@@ -2,6 +2,7 @@ use std::iter;
 
 use rustc_ast::util::{classify, parser};
 use rustc_ast::{self as ast, ExprKind, HasAttrs as _, StmtKind};
+use rustc_data_structures::fx::FxHashMap;
 use rustc_errors::{MultiSpan, pluralize};
 use rustc_hir::def::{DefKind, Res};
 use rustc_hir::def_id::DefId;
@@ -1029,6 +1030,14 @@ pub(crate) struct UnusedParens {
     /// `1 as (i32) < 2` parses to ExprKind::Lt
     /// `1 as i32 < 2` parses to i32::<2[missing angle bracket]
     parens_in_cast_in_lt: Vec<ast::NodeId>,
+    /// Ty nodes in this map are in TypeNoBounds position. Any bounds they
+    /// contain may be ambiguous w/r/t *trailing* `+` operators.
+    in_no_bounds_pos: FxHashMap<ast::NodeId, NoBoundsException>,
+}
+
+enum NoBoundsException {
+    None,
+    OneBound,
 }
 
 impl_lint_pass!(UnusedParens => [UNUSED_PARENS]);
@@ -1273,10 +1282,12 @@ impl EarlyLintPass for UnusedParens {
             }
             ast::TyKind::Paren(r) => {
                 match &r.kind {
-                    ast::TyKind::TraitObject(..) => {}
+                    ast::TyKind::TraitObject(bounds, _) | ast::TyKind::ImplTrait(_, bounds)
+                        if self.in_no_bounds_pos.get(&ty.id).is_some_and(|exception| {
+                            matches!(exception, NoBoundsException::None) || bounds.len() > 1
+                        }) => {}
                     ast::TyKind::BareFn(b)
                         if self.with_self_ty_parens && b.generic_params.len() > 0 => {}
-                    ast::TyKind::ImplTrait(_, bounds) if bounds.len() > 1 => {}
                     _ => {
                         let spans = if !ty.span.from_expansion() {
                             r.span
@@ -1290,12 +1301,34 @@ impl EarlyLintPass for UnusedParens {
                 }
                 self.with_self_ty_parens = false;
             }
+            ast::TyKind::Ref(_, mut_ty) | ast::TyKind::Ptr(mut_ty) => {
+                self.in_no_bounds_pos.insert(mut_ty.ty.id, NoBoundsException::OneBound);
+            }
+            ast::TyKind::TraitObject(bounds, _) | ast::TyKind::ImplTrait(_, bounds) => {
+                let mut exception = NoBoundsException::OneBound;
+                for bound in bounds.iter().rev() {
+                    if let ast::GenericBound::Trait(poly_trait_ref) = bound
+                        && let [.., segment] = &*poly_trait_ref.trait_ref.path.segments
+                        && let Some(args) = segment.args.as_ref()
+                        && let ast::GenericArgs::Parenthesized(paren_args) = &**args
+                        && let ast::FnRetTy::Ty(ret_ty) = &paren_args.output
+                    {
+                        self.in_no_bounds_pos.insert(ret_ty.id, exception);
+                    }
+
+                    exception = NoBoundsException::None;
+                }
+            }
             _ => {}
         }
     }
 
     fn check_item(&mut self, cx: &EarlyContext<'_>, item: &ast::Item) {
         <Self as UnusedDelimLint>::check_item(self, cx, item)
+    }
+
+    fn check_item_post(&mut self, _: &EarlyContext<'_>, _: &rustc_ast::Item) {
+        self.in_no_bounds_pos.clear();
     }
 
     fn enter_where_predicate(&mut self, _: &EarlyContext<'_>, pred: &ast::WherePredicate) {
