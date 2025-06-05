@@ -1,0 +1,8 @@
+//@ run-rustfix
+//@ edition: 2018
+
+#![deny(unused_parens)]
+
+pub type DynIsAProperKeywordBeginningWith2018 = Box<dyn ::std::ops::Fn()>; //~ ERROR unnecessary parentheses around type
+
+fn main() {}

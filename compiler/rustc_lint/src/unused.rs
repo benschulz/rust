@@ -1,7 +1,7 @@
 use std::iter;
 
 use rustc_ast::util::{classify, parser};
-use rustc_ast::{self as ast, ExprKind, HasAttrs as _, StmtKind};
+use rustc_ast::{self as ast, ExprKind, GenericBound, HasAttrs as _, StmtKind};
 use rustc_data_structures::fx::FxHashMap;
 use rustc_errors::{MultiSpan, pluralize};
 use rustc_hir::def::{DefKind, Res};
@@ -10,6 +10,7 @@ use rustc_hir::{self as hir, LangItem};
 use rustc_infer::traits::util::elaborate;
 use rustc_middle::ty::{self, Ty, adjustment};
 use rustc_session::{declare_lint, declare_lint_pass, impl_lint_pass};
+use rustc_span::edition::Edition::Edition2015;
 use rustc_span::{BytePos, Span, Symbol, kw, sym};
 use tracing::instrument;
 
@@ -1282,7 +1283,7 @@ impl EarlyLintPass for UnusedParens {
             }
             ast::TyKind::Paren(r) => {
                 match &r.kind {
-                    ast::TyKind::TraitObject(bounds, _) | ast::TyKind::ImplTrait(_, bounds)
+                    ast::TyKind::ImplTrait(_, bounds) | ast::TyKind::TraitObject(bounds, _)
                         if self.in_no_bounds_pos.get(&ty.id).is_some_and(|exception| {
                             matches!(exception, NoBoundsException::None) || bounds.len() > 1
                         }) => {}
@@ -1305,6 +1306,36 @@ impl EarlyLintPass for UnusedParens {
                 self.in_no_bounds_pos.insert(mut_ty.ty.id, NoBoundsException::OneBound);
             }
             ast::TyKind::TraitObject(bounds, _) | ast::TyKind::ImplTrait(_, bounds) => {
+                if let [bound] = &**bounds
+                    && let GenericBound::Trait(poly_trait_ref) = bound
+                    && let Ok(snip) = cx.sess().source_map().span_to_snippet(poly_trait_ref.span)
+                    && snip.starts_with('(')
+                    && snip.ends_with(')')
+                {
+                    if cx.sess().psess.edition == Edition2015
+                        && let [segment, ..] = &*poly_trait_ref.trait_ref.path.segments
+                        && segment.ident.name == kw::PathRoot
+                    {
+                    } else {
+                        let s = poly_trait_ref.span;
+                        let spans = (!s.from_expansion()).then(|| {
+                            (
+                                s.with_hi(s.lo() + rustc_span::BytePos(1)),
+                                s.with_lo(s.hi() - rustc_span::BytePos(1)),
+                            )
+                        });
+
+                        self.emit_unused_delims(
+                            cx,
+                            poly_trait_ref.span,
+                            spans,
+                            "type",
+                            (false, false),
+                            false,
+                        );
+                    }
+                }
+
                 let mut exception = NoBoundsException::OneBound;
                 for bound in bounds.iter().rev() {
                     if let ast::GenericBound::Trait(poly_trait_ref) = bound

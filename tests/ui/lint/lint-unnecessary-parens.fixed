@@ -17,11 +17,11 @@ fn bar(y: bool) -> X {
     return X { y }; //~ ERROR unnecessary parentheses around `return` value
 }
 
-pub fn unused_parens_around_return_type() -> u32 { //~ ERROR unnecessary parentheses around type
+pub fn around_return_type() -> u32 { //~ ERROR unnecessary parentheses around type
     panic!()
 }
 
-pub fn unused_parens_around_block_return() -> u32 {
+pub fn around_block_return() -> u32 {
     let _foo = {
         5 //~ ERROR unnecessary parentheses around block return value
     };
@@ -32,49 +32,57 @@ pub trait Trait {
     fn test(&self);
 }
 
-pub fn unused_parens_around_multi_bound_ref_passes() -> &'static (dyn Trait + Send) {
+pub fn around_multi_bound_ref() -> &'static (dyn Trait + Send) {
     panic!()
 }
 
-pub fn unused_parens_around_single_bound_ref() -> &'static dyn Trait { //~ ERROR unnecessary parentheses around type
+pub fn around_single_bound_ref() -> &'static dyn Trait { //~ ERROR unnecessary parentheses around type
     panic!()
 }
 
-pub fn unused_parens_around_multi_bound_ptr_passes() -> *const (dyn Trait + Send) {
+pub fn around_multi_bound_ptr() -> *const (dyn Trait + Send) {
     panic!()
 }
 
-pub fn unused_parens_around_single_bound_ptr() -> *const dyn Trait { //~ ERROR unnecessary parentheses around type
+pub fn around_single_bound_ptr() -> *const dyn Trait { //~ ERROR unnecessary parentheses around type
     panic!()
 }
 
-pub fn unused_parens_around_multi_bound_dyn_fn_output_passes()
+pub fn around_multi_bound_dyn_fn_output()
 -> &'static dyn FnOnce() -> (impl Send + Sync) {
     &|| ()
 }
 
-pub fn unused_parens_around_single_bound_dyn_fn_output() -> &'static dyn FnOnce()
+pub fn around_single_bound_dyn_fn_output() -> &'static dyn FnOnce()
 -> impl Send { //~ ERROR unnecessary parentheses around type
     &|| ()
 }
 
-pub fn unused_parens_around_dyn_fn_output_passes_given_additinoal_output_bounds()
+pub fn around_dyn_fn_output_given_more_bounds()
 -> &'static (dyn FnOnce() -> (impl Send) + Sync) {
     &|| ()
 }
 
-pub fn unused_parens_around_multi_bound_impl_fn_output_passes()
+pub fn around_multi_bound_impl_fn_output()
 -> impl FnOnce() -> (impl Send + Sync) {
     || ()
 }
 
-pub fn unused_parens_around_single_bound_impl_fn_output()
+pub fn around_single_bound_impl_fn_output()
 -> impl FnOnce() -> impl Send { //~ ERROR unnecessary parentheses around type
     || ()
 }
 
-pub fn unused_parens_around_impl_fn_output_passes_given_additinoal_output_bounds()
+pub fn around_impl_fn_output_given_more_bounds()
 -> impl FnOnce() -> (impl Send) + Sync {
+    || ()
+}
+
+pub fn around_dyn_bound() -> &'static dyn FnOnce() { //~ ERROR unnecessary parentheses around type
+    &|| ()
+}
+
+pub fn around_impl_trait_bound() -> impl FnOnce() { //~ ERROR unnecessary parentheses around type
     || ()
 }
 
