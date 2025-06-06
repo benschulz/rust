@@ -1,7 +1,7 @@
 use std::iter;
 
 use rustc_ast::util::{classify, parser};
-use rustc_ast::{self as ast, ExprKind, GenericBound, HasAttrs as _, StmtKind};
+use rustc_ast::{self as ast, ExprKind, HasAttrs as _, StmtKind};
 use rustc_data_structures::fx::FxHashMap;
 use rustc_errors::{MultiSpan, pluralize};
 use rustc_hir::def::{DefKind, Res};
@@ -1306,48 +1306,62 @@ impl EarlyLintPass for UnusedParens {
                 self.in_no_bounds_pos.insert(mut_ty.ty.id, NoBoundsException::OneBound);
             }
             ast::TyKind::TraitObject(bounds, _) | ast::TyKind::ImplTrait(_, bounds) => {
-                if let [bound] = &**bounds
-                    && let GenericBound::Trait(poly_trait_ref) = bound
-                    && let Ok(snip) = cx.sess().source_map().span_to_snippet(poly_trait_ref.span)
-                    && snip.starts_with('(')
-                    && snip.ends_with(')')
-                {
-                    if cx.sess().psess.edition == Edition2015
-                        && let [segment, ..] = &*poly_trait_ref.trait_ref.path.segments
-                        && segment.ident.name == kw::PathRoot
-                    {
-                    } else {
-                        let s = poly_trait_ref.span;
-                        let spans = (!s.from_expansion()).then(|| {
-                            (
-                                s.with_hi(s.lo() + rustc_span::BytePos(1)),
-                                s.with_lo(s.hi() - rustc_span::BytePos(1)),
-                            )
-                        });
-
-                        self.emit_unused_delims(
-                            cx,
-                            poly_trait_ref.span,
-                            spans,
-                            "type",
-                            (false, false),
-                            false,
-                        );
-                    }
-                }
-
-                let mut exception = NoBoundsException::OneBound;
+                let mut last = true;
                 for bound in bounds.iter().rev() {
-                    if let ast::GenericBound::Trait(poly_trait_ref) = bound
-                        && let [.., segment] = &*poly_trait_ref.trait_ref.path.segments
-                        && let Some(args) = segment.args.as_ref()
-                        && let ast::GenericArgs::Parenthesized(paren_args) = &**args
-                        && let ast::FnRetTy::Ty(ret_ty) = &paren_args.output
-                    {
-                        self.in_no_bounds_pos.insert(ret_ty.id, exception);
+                    if let ast::GenericBound::Trait(poly_trait_ref) = bound {
+                        let parenthesized = cx
+                            .sess()
+                            .source_map()
+                            .span_to_snippet(poly_trait_ref.span)
+                            .map(|snip| snip.starts_with('(') && snip.ends_with(')'))
+                            .unwrap_or(false);
+
+                        let fn_with_explicit_ret_ty = if let [.., segment] =
+                            &*poly_trait_ref.trait_ref.path.segments
+                            && let Some(args) = segment.args.as_ref()
+                            && let ast::GenericArgs::Parenthesized(paren_args) = &**args
+                            && let ast::FnRetTy::Ty(ret_ty) = &paren_args.output
+                        {
+                            self.in_no_bounds_pos.insert(
+                                ret_ty.id,
+                                if last {
+                                    NoBoundsException::OneBound
+                                } else {
+                                    NoBoundsException::None
+                                },
+                            );
+
+                            true
+                        } else {
+                            false
+                        };
+
+                        if parenthesized && (last || !fn_with_explicit_ret_ty) {
+                            if let [first_segment, ..] = &*poly_trait_ref.trait_ref.path.segments
+                                && (cx.sess().psess.edition != Edition2015
+                                    || first_segment.ident.name != kw::PathRoot)
+                            {
+                                let s = poly_trait_ref.span;
+                                let spans = (!s.from_expansion()).then(|| {
+                                    (
+                                        s.with_hi(s.lo() + rustc_span::BytePos(1)),
+                                        s.with_lo(s.hi() - rustc_span::BytePos(1)),
+                                    )
+                                });
+
+                                self.emit_unused_delims(
+                                    cx,
+                                    poly_trait_ref.span,
+                                    spans,
+                                    "type",
+                                    (false, false),
+                                    false,
+                                );
+                            }
+                        }
                     }
 
-                    exception = NoBoundsException::None;
+                    last = false;
                 }
             }
             _ => {}

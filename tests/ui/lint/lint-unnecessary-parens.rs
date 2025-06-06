@@ -86,6 +86,40 @@ pub fn around_impl_trait_bound() -> impl (FnOnce()) { //~ ERROR unnecessary pare
     || ()
 }
 
+// these parens aren't strictly required but they help disambiguate => no lint
+pub fn around_fn_bound_with_explicit_ret_ty() -> impl (Fn() -> ()) + Send {
+    || ()
+}
+
+pub fn around_fn_bound_with_implicit_ret_ty() -> impl (Fn()) + Send { //~ ERROR unnecessary parentheses around type
+    || ()
+}
+
+pub fn around_last_fn_bound_with_explicit_ret_ty() -> impl Send + (Fn() -> ()) { //~ ERROR unnecessary parentheses around type
+    || ()
+}
+
+pub fn around_regular_bound1() -> &'static (dyn (Send) + Sync) { //~ ERROR unnecessary parentheses around type
+    &|| ()
+}
+
+pub fn around_regular_bound2() -> &'static (dyn (std::marker::Send) + Sync) { //~ ERROR unnecessary parentheses around type
+    &|| ()
+}
+
+pub fn around_regular_bound3() -> &'static (dyn Send + (Sync)) { //~ ERROR unnecessary parentheses around type
+    &|| ()
+}
+
+pub fn around_regular_bound4() -> &'static (dyn Send + (std::marker::Sync)) { //~ ERROR unnecessary parentheses around type
+    &|| ()
+}
+
+// TODO
+pub fn around_regular_bound5() -> &'static dyn Send + (std::marker::Sync) { //~ ERROR unnecessary parentheses around type
+    &|| ()
+}
+
 pub fn parens_with_keyword(e: &[()]) -> i32 {
     if(true) {} //~ ERROR unnecessary parentheses around `if`
     while(true) {} //~ ERROR unnecessary parentheses around `while`

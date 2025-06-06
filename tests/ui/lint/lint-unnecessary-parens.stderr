@@ -1,3 +1,14 @@
+error: ambiguous `+` in a type
+  --> $DIR/lint-unnecessary-parens.rs:119:44
+   |
+LL | pub fn around_regular_bound5() -> &'static dyn Send + (std::marker::Sync) {
+   |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+help: try adding parentheses
+   |
+LL | pub fn around_regular_bound5() -> &'static (dyn Send + (std::marker::Sync)) {
+   |                                            +                              +
+
 error: unnecessary parentheses around `return` value
   --> $DIR/lint-unnecessary-parens.rs:14:12
    |
@@ -135,8 +146,92 @@ LL - pub fn around_impl_trait_bound() -> impl (FnOnce()) {
 LL + pub fn around_impl_trait_bound() -> impl FnOnce() {
    |
 
+error: unnecessary parentheses around type
+  --> $DIR/lint-unnecessary-parens.rs:94:55
+   |
+LL | pub fn around_fn_bound_with_implicit_ret_ty() -> impl (Fn()) + Send {
+   |                                                       ^    ^
+   |
+help: remove these parentheses
+   |
+LL - pub fn around_fn_bound_with_implicit_ret_ty() -> impl (Fn()) + Send {
+LL + pub fn around_fn_bound_with_implicit_ret_ty() -> impl Fn() + Send {
+   |
+
+error: unnecessary parentheses around type
+  --> $DIR/lint-unnecessary-parens.rs:98:67
+   |
+LL | pub fn around_last_fn_bound_with_explicit_ret_ty() -> impl Send + (Fn() -> ()) {
+   |                                                                   ^          ^
+   |
+help: remove these parentheses
+   |
+LL - pub fn around_last_fn_bound_with_explicit_ret_ty() -> impl Send + (Fn() -> ()) {
+LL + pub fn around_last_fn_bound_with_explicit_ret_ty() -> impl Send + Fn() -> () {
+   |
+
+error: unnecessary parentheses around type
+  --> $DIR/lint-unnecessary-parens.rs:102:49
+   |
+LL | pub fn around_regular_bound1() -> &'static (dyn (Send) + Sync) {
+   |                                                 ^    ^
+   |
+help: remove these parentheses
+   |
+LL - pub fn around_regular_bound1() -> &'static (dyn (Send) + Sync) {
+LL + pub fn around_regular_bound1() -> &'static (dyn Send + Sync) {
+   |
+
+error: unnecessary parentheses around type
+  --> $DIR/lint-unnecessary-parens.rs:106:49
+   |
+LL | pub fn around_regular_bound2() -> &'static (dyn (std::marker::Send) + Sync) {
+   |                                                 ^                 ^
+   |
+help: remove these parentheses
+   |
+LL - pub fn around_regular_bound2() -> &'static (dyn (std::marker::Send) + Sync) {
+LL + pub fn around_regular_bound2() -> &'static (dyn std::marker::Send + Sync) {
+   |
+
+error: unnecessary parentheses around type
+  --> $DIR/lint-unnecessary-parens.rs:110:56
+   |
+LL | pub fn around_regular_bound3() -> &'static (dyn Send + (Sync)) {
+   |                                                        ^    ^
+   |
+help: remove these parentheses
+   |
+LL - pub fn around_regular_bound3() -> &'static (dyn Send + (Sync)) {
+LL + pub fn around_regular_bound3() -> &'static (dyn Send + Sync) {
+   |
+
+error: unnecessary parentheses around type
+  --> $DIR/lint-unnecessary-parens.rs:114:56
+   |
+LL | pub fn around_regular_bound4() -> &'static (dyn Send + (std::marker::Sync)) {
+   |                                                        ^                 ^
+   |
+help: remove these parentheses
+   |
+LL - pub fn around_regular_bound4() -> &'static (dyn Send + (std::marker::Sync)) {
+LL + pub fn around_regular_bound4() -> &'static (dyn Send + std::marker::Sync) {
+   |
+
+error: unnecessary parentheses around type
+  --> $DIR/lint-unnecessary-parens.rs:119:55
+   |
+LL | pub fn around_regular_bound5() -> &'static dyn Send + (std::marker::Sync) {
+   |                                                       ^                 ^
+   |
+help: remove these parentheses
+   |
+LL - pub fn around_regular_bound5() -> &'static dyn Send + (std::marker::Sync) {
+LL + pub fn around_regular_bound5() -> &'static dyn Send + std::marker::Sync {
+   |
+
 error: unnecessary parentheses around `if` condition
-  --> $DIR/lint-unnecessary-parens.rs:90:7
+  --> $DIR/lint-unnecessary-parens.rs:124:7
    |
 LL |     if(true) {}
    |       ^    ^
@@ -148,7 +243,7 @@ LL +     if true {}
    |
 
 error: unnecessary parentheses around `while` condition
-  --> $DIR/lint-unnecessary-parens.rs:91:10
+  --> $DIR/lint-unnecessary-parens.rs:125:10
    |
 LL |     while(true) {}
    |          ^    ^
@@ -160,7 +255,7 @@ LL +     while true {}
    |
 
 error: unnecessary parentheses around `for` iterator expression
-  --> $DIR/lint-unnecessary-parens.rs:92:13
+  --> $DIR/lint-unnecessary-parens.rs:126:13
    |
 LL |     for _ in(e) {}
    |             ^ ^
@@ -172,7 +267,7 @@ LL +     for _ in e {}
    |
 
 error: unnecessary parentheses around `match` scrutinee expression
-  --> $DIR/lint-unnecessary-parens.rs:93:10
+  --> $DIR/lint-unnecessary-parens.rs:127:10
    |
 LL |     match(1) { _ => ()}
    |          ^ ^
@@ -184,7 +279,7 @@ LL +     match 1 { _ => ()}
    |
 
 error: unnecessary parentheses around `return` value
-  --> $DIR/lint-unnecessary-parens.rs:94:11
+  --> $DIR/lint-unnecessary-parens.rs:128:11
    |
 LL |     return(1);
    |           ^ ^
@@ -196,7 +291,7 @@ LL +     return 1;
    |
 
 error: unnecessary parentheses around assigned value
-  --> $DIR/lint-unnecessary-parens.rs:125:31
+  --> $DIR/lint-unnecessary-parens.rs:159:31
    |
 LL | pub const CONST_ITEM: usize = (10);
    |                               ^  ^
@@ -208,7 +303,7 @@ LL + pub const CONST_ITEM: usize = 10;
    |
 
 error: unnecessary parentheses around assigned value
-  --> $DIR/lint-unnecessary-parens.rs:126:33
+  --> $DIR/lint-unnecessary-parens.rs:160:33
    |
 LL | pub static STATIC_ITEM: usize = (10);
    |                                 ^  ^
@@ -220,7 +315,7 @@ LL + pub static STATIC_ITEM: usize = 10;
    |
 
 error: unnecessary parentheses around function argument
-  --> $DIR/lint-unnecessary-parens.rs:130:9
+  --> $DIR/lint-unnecessary-parens.rs:164:9
    |
 LL |     bar((true));
    |         ^    ^
@@ -232,7 +327,7 @@ LL +     bar(true);
    |
 
 error: unnecessary parentheses around `if` condition
-  --> $DIR/lint-unnecessary-parens.rs:132:8
+  --> $DIR/lint-unnecessary-parens.rs:166:8
    |
 LL |     if (true) {}
    |        ^    ^
@@ -244,7 +339,7 @@ LL +     if true {}
    |
 
 error: unnecessary parentheses around `while` condition
-  --> $DIR/lint-unnecessary-parens.rs:133:11
+  --> $DIR/lint-unnecessary-parens.rs:167:11
    |
 LL |     while (true) {}
    |           ^    ^
@@ -256,7 +351,7 @@ LL +     while true {}
    |
 
 error: unnecessary parentheses around `match` scrutinee expression
-  --> $DIR/lint-unnecessary-parens.rs:134:11
+  --> $DIR/lint-unnecessary-parens.rs:168:11
    |
 LL |     match (true) {
    |           ^    ^
@@ -268,7 +363,7 @@ LL +     match true {
    |
 
 error: unnecessary parentheses around `let` scrutinee expression
-  --> $DIR/lint-unnecessary-parens.rs:137:16
+  --> $DIR/lint-unnecessary-parens.rs:171:16
    |
 LL |     if let 1 = (1) {}
    |                ^ ^
@@ -280,7 +375,7 @@ LL +     if let 1 = 1 {}
    |
 
 error: unnecessary parentheses around `let` scrutinee expression
-  --> $DIR/lint-unnecessary-parens.rs:138:19
+  --> $DIR/lint-unnecessary-parens.rs:172:19
    |
 LL |     while let 1 = (2) {}
    |                   ^ ^
@@ -292,7 +387,7 @@ LL +     while let 1 = 2 {}
    |
 
 error: unnecessary parentheses around method argument
-  --> $DIR/lint-unnecessary-parens.rs:154:24
+  --> $DIR/lint-unnecessary-parens.rs:188:24
    |
 LL |     X { y: false }.foo((true));
    |                        ^    ^
@@ -304,7 +399,7 @@ LL +     X { y: false }.foo(true);
    |
 
 error: unnecessary parentheses around assigned value
-  --> $DIR/lint-unnecessary-parens.rs:156:18
+  --> $DIR/lint-unnecessary-parens.rs:190:18
    |
 LL |     let mut _a = (0);
    |                  ^ ^
@@ -316,7 +411,7 @@ LL +     let mut _a = 0;
    |
 
 error: unnecessary parentheses around assigned value
-  --> $DIR/lint-unnecessary-parens.rs:157:10
+  --> $DIR/lint-unnecessary-parens.rs:191:10
    |
 LL |     _a = (0);
    |          ^ ^
@@ -328,7 +423,7 @@ LL +     _a = 0;
    |
 
 error: unnecessary parentheses around assigned value
-  --> $DIR/lint-unnecessary-parens.rs:158:11
+  --> $DIR/lint-unnecessary-parens.rs:192:11
    |
 LL |     _a += (1);
    |           ^ ^
@@ -340,7 +435,7 @@ LL +     _a += 1;
    |
 
 error: unnecessary parentheses around pattern
-  --> $DIR/lint-unnecessary-parens.rs:160:8
+  --> $DIR/lint-unnecessary-parens.rs:194:8
    |
 LL |     let(mut _a) = 3;
    |        ^      ^
@@ -352,7 +447,7 @@ LL +     let mut _a = 3;
    |
 
 error: unnecessary parentheses around pattern
-  --> $DIR/lint-unnecessary-parens.rs:161:9
+  --> $DIR/lint-unnecessary-parens.rs:195:9
    |
 LL |     let (mut _a) = 3;
    |         ^      ^
@@ -364,7 +459,7 @@ LL +     let mut _a = 3;
    |
 
 error: unnecessary parentheses around pattern
-  --> $DIR/lint-unnecessary-parens.rs:162:8
+  --> $DIR/lint-unnecessary-parens.rs:196:8
    |
 LL |     let( mut _a) = 3;
    |        ^^      ^
@@ -376,7 +471,7 @@ LL +     let mut _a = 3;
    |
 
 error: unnecessary parentheses around pattern
-  --> $DIR/lint-unnecessary-parens.rs:164:8
+  --> $DIR/lint-unnecessary-parens.rs:198:8
    |
 LL |     let(_a) = 3;
    |        ^  ^
@@ -388,7 +483,7 @@ LL +     let _a = 3;
    |
 
 error: unnecessary parentheses around pattern
-  --> $DIR/lint-unnecessary-parens.rs:165:9
+  --> $DIR/lint-unnecessary-parens.rs:199:9
    |
 LL |     let (_a) = 3;
    |         ^  ^
@@ -400,7 +495,7 @@ LL +     let _a = 3;
    |
 
 error: unnecessary parentheses around pattern
-  --> $DIR/lint-unnecessary-parens.rs:166:8
+  --> $DIR/lint-unnecessary-parens.rs:200:8
    |
 LL |     let( _a) = 3;
    |        ^^  ^
@@ -412,7 +507,7 @@ LL +     let _a = 3;
    |
 
 error: unnecessary parentheses around block return value
-  --> $DIR/lint-unnecessary-parens.rs:172:9
+  --> $DIR/lint-unnecessary-parens.rs:206:9
    |
 LL |         (unit!() - One)
    |         ^             ^
@@ -424,7 +519,7 @@ LL +         unit!() - One
    |
 
 error: unnecessary parentheses around block return value
-  --> $DIR/lint-unnecessary-parens.rs:174:9
+  --> $DIR/lint-unnecessary-parens.rs:208:9
    |
 LL |         (unit![] - One)
    |         ^             ^
@@ -436,7 +531,7 @@ LL +         unit![] - One
    |
 
 error: unnecessary parentheses around block return value
-  --> $DIR/lint-unnecessary-parens.rs:177:9
+  --> $DIR/lint-unnecessary-parens.rs:211:9
    |
 LL |         (unit! {} - One)
    |         ^              ^
@@ -448,7 +543,7 @@ LL +         unit! {} - One
    |
 
 error: unnecessary parentheses around assigned value
-  --> $DIR/lint-unnecessary-parens.rs:182:14
+  --> $DIR/lint-unnecessary-parens.rs:216:14
    |
 LL |     let _r = (&x);
    |              ^  ^
@@ -460,7 +555,7 @@ LL +     let _r = &x;
    |
 
 error: unnecessary parentheses around assigned value
-  --> $DIR/lint-unnecessary-parens.rs:183:14
+  --> $DIR/lint-unnecessary-parens.rs:217:14
    |
 LL |     let _r = (&mut x);
    |              ^      ^
@@ -471,5 +566,5 @@ LL -     let _r = (&mut x);
 LL +     let _r = &mut x;
    |
 
-error: aborting due to 39 previous errors
+error: aborting due to 47 previous errors
 
